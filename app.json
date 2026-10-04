@@ -80,6 +80,12 @@
           "calendarPermission": "OneQ adds your gym bookings to your calendar when you tap Add to Calendar.",
           "remindersPermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "OneQ uses your location to show the nearest places on the map."
+        }
       ]
     ],
     "extra": {

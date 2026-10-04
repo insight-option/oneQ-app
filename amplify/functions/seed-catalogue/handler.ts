@@ -20,7 +20,7 @@ import {
   sampleServices,
 } from '../../seed/samples';
 import { SECTIONS } from '../../seed/sections';
-import { check } from '../shared/data';
+import { check, unwrap } from '../shared/data';
 import { listAll } from '../shared/facilities';
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
@@ -84,16 +84,29 @@ async function seedSections(count: (r: 'created' | 'updated' | 'unchanged') => v
   }
 }
 
+// Approximate area centres in Doha, so facilities from before locations existed appear on the map until their
+// owner places the pin.
+const AREA_CENTRES: Record<string, { lat: number; lng: number }> = {
+  'West Bay': { lat: 25.3215, lng: 51.531 },
+  Lusail: { lat: 25.4207, lng: 51.4904 },
+  'The Pearl': { lat: 25.3714, lng: 51.551 },
+  'Al Waab': { lat: 25.2602, lng: 51.4458 },
+  Msheireb: { lat: 25.2866, lng: 51.5258 },
+  'Al Sadd': { lat: 25.2846, lng: 51.4947 },
+};
+
 // Facilities from before sections become approved gyms. Only missing fields are written; the owner is the
 // platform admin account when one is given (temporary until each gym has its own owner account).
 async function migrateFacilities(adminOwnerKey: string | null) {
   let migrated = 0;
   for (const g of await listAll((nextToken) => client.models.Gym.list({ nextToken, limit: 100 }))) {
+    const centre = g.lat == null ? AREA_CENTRES[g.area] : undefined;
     const patch = {
       ...(g.sectionId == null ? { sectionId: 'gym' } : {}),
       ...(g.status == null ? { status: 'approved' as const } : {}),
       ...(g.createdBy == null ? { createdBy: 'owner' as const } : {}),
       ...(g.ownerId == null && adminOwnerKey ? { ownerId: adminOwnerKey } : {}),
+      ...(centre ? { lat: centre.lat, lng: centre.lng, region: g.region ?? g.area } : {}),
     };
     if (Object.keys(patch).length === 0) continue;
     check(await client.models.Gym.update({ id: g.id, ...patch }));
@@ -223,17 +236,29 @@ async function seedSamples(adminOwnerKey: string | null) {
   };
 }
 
+// Test branch: the sample facilities become visible to customers (the client app's sections and map).
+async function publishSamples() {
+  const ids = ['sample-gym', 'sample-salon', 'sample-clinic'];
+  for (const id of ids) {
+    const g = await unwrap(client.models.Gym.get({ id }));
+    if (g && g.status !== 'approved') check(await client.models.Gym.update({ id, status: 'approved', statusReason: 'sample' }));
+  }
+  return ids;
+}
+
 type SeedEvent = {
   overwrite?: boolean;
   adminOwnerKey?: string | null;
   isolationFixtures?: { ownerA: string; ownerB: string };
   samples?: boolean;
+  publishSamples?: boolean;
 };
 
 export const handler = async (event?: SeedEvent) => {
   overwrite = event?.overwrite === true;
   if (event?.isolationFixtures) return { isolationFixtures: await seedIsolationFixtures(event.isolationFixtures) };
   if (event?.samples) return { samples: await seedSamples(event.adminOwnerKey ?? null) };
+  if (event?.publishSamples) return { published: await publishSamples() };
   const outcome = { created: 0, updated: 0, unchanged: 0 };
   const count = (r: 'created' | 'updated' | 'unchanged') => (outcome[r] += 1);
 

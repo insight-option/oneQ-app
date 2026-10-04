@@ -59,6 +59,11 @@ export function BookingCard({ booking }: { booking: Booking }) {
             {status}
           </AppText>
         </View>
+        {booking.trainerUnavailable && booking.status === 'confirmed' ? (
+          <AppText variant="bodyS" color={colors.accent} numberOfLines={2}>
+            {t('bookings2.trainerUnavailable')}
+          </AppText>
+        ) : null}
       </View>
       <Image source={image} style={styles.image} contentFit="cover" transition={150} />
       <Icon name="chevron-right" directional color={colors.textSecondary} />

@@ -8,12 +8,14 @@ import { useTheme } from '@/theme';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-// 03-NAVIGATION §2
+// Bottom tabs (v3): Home · Map · Gifts · Orders (the existing bookings) · Account (settings + wallet).
+// Favorites stay reachable from the account screen.
 const TABS: { name: string; label: string; icon: IconName; iconActive: IconName }[] = [
   { name: 'home', label: 'tabs.home', icon: 'home-outline', iconActive: 'home' },
-  { name: 'bookings', label: 'tabs.bookings', icon: 'calendar-blank-outline', iconActive: 'calendar-blank' },
-  { name: 'favorites', label: 'tabs.favorites', icon: 'heart-outline', iconActive: 'heart' },
-  { name: 'profile', label: 'tabs.profile', icon: 'account-outline', iconActive: 'account' },
+  { name: 'map', label: 'tabs.map', icon: 'map-outline', iconActive: 'map' },
+  { name: 'gifts', label: 'tabs.gifts', icon: 'gift-outline', iconActive: 'gift' },
+  { name: 'bookings', label: 'tabs.orders', icon: 'calendar-blank-outline', iconActive: 'calendar-blank' },
+  { name: 'profile', label: 'tabs.account', icon: 'account-outline', iconActive: 'account' },
 ];
 
 export default function TabsLayout() {
@@ -56,6 +58,7 @@ export default function TabsLayout() {
           }}
         />
       ))}
+      <Tabs.Screen name="favorites" options={{ href: null }} />
     </Tabs>
   );
 }

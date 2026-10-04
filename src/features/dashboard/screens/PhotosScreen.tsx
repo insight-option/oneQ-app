@@ -14,6 +14,7 @@ import { errorMessage } from '@/utils/errorMessage';
 
 import { useCurrentFacility } from '../FacilityDashboard';
 import { useSaveFacility } from '../hooks';
+import { LocationPanel } from '../LocationPanel';
 import { Grid, PageHeader, Panel } from '../ui';
 
 const isHttps = (u: string) => /^https:\/\/\S+$/.test(u.trim());
@@ -110,6 +111,7 @@ export function PhotosScreen() {
           </Panel>
         </View>
       </Grid>
+      <LocationPanel facility={facility} />
     </>
   );
 }

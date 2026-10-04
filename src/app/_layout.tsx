@@ -19,6 +19,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { EmptyState } from '@/components/StateView';
 import { ToastProvider, useToast } from '@/components/Toast';
+import { AuthSheet } from '@/features/auth/AuthSheet';
+import { RatingPrompt } from '@/features/reviews/RatingPrompt';
 import { queryClient } from '@/data';
 import { listenForSessionExpiry, restoreSession } from '@/features/auth/session';
 import i18n, { initI18n } from '@/i18n';
@@ -80,6 +82,8 @@ export default function RootLayout() {
           <ToastProvider>
             <ThemedStatusBar />
             <RootStack />
+            <AuthSheet />
+            <RatingPrompt />
           </ToastProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
@@ -140,6 +144,8 @@ function RootStack() {
       {/* Facility dashboards: their own frame (side menu / top bar), no stack header. */}
       <Stack.Screen name="dashboard" options={{ headerShown: false }} />
       <Stack.Screen name="console" options={{ headerShown: false }} />
+      <Stack.Screen name="section/[slug]" options={{ title: '' }} />
+      <Stack.Screen name="facility/[id]" options={{ title: '' }} />
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
     </Stack>
   );

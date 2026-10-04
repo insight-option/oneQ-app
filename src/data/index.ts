@@ -55,6 +55,17 @@ export const useReviewStatus = (target: ReviewTarget, enabled: boolean) =>
 export const useAvailability = (trainerId: string) =>
   useQuery({ queryKey: ['availability', trainerId], queryFn: () => repository.getAvailability(trainerId) });
 
+export const useSections = () => useQuery({ queryKey: ['sections'], queryFn: () => repository.listSections() });
+
+export const useFacilities = (sectionId?: string | null) =>
+  useQuery({ queryKey: ['facilities', sectionId ?? 'all'], queryFn: () => repository.listFacilities(sectionId) });
+
+export const useFacilityServicesPublic = (facilityId: string) =>
+  useQuery({ queryKey: ['services', facilityId], queryFn: () => repository.listServices(facilityId), enabled: !!facilityId });
+
+export const useDepartments = (facilityId: string) =>
+  useQuery({ queryKey: ['departments', facilityId], queryFn: () => repository.listDepartments(facilityId), enabled: !!facilityId });
+
 // Bookings belong to the current user (or this device's guest), so they are cleared on every auth change.
 export const useBookings = () => useQuery({ queryKey: ['bookings'], queryFn: () => repository.listBookings() });
 

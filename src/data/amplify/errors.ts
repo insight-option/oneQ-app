@@ -32,6 +32,10 @@ const SERVER_CODES: Record<string, RepositoryErrorCode> = {
   DUPLICATE_REVIEW: 'DUPLICATE_REVIEW',
   CONFLICT: 'CONFLICT',
   PHONE_EXISTS: 'ACCOUNT_EXISTS',
+  FREEZE_LIMIT: 'FREEZE_LIMIT',
+  FREEZE_NOT_ALLOWED: 'FREEZE_NOT_ALLOWED',
+  ACCOUNT_EXISTS: 'ACCOUNT_EXISTS',
+  SECTION_NOT_EMPTY: 'CONFLICT',
 };
 
 const NETWORK = /network|failed to fetch|network request failed|timeout|offline/i;

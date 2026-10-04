@@ -4,7 +4,13 @@ import { generateClient } from 'aws-amplify/data';
 
 import type {
   Account,
+  Address,
   AmenityKey,
+  Department,
+  FacilityService,
+  MembershipFreeze,
+  Section,
+  ServiceMode,
   Booking,
   BookingDraft,
   BookingStatus,
@@ -139,15 +145,34 @@ const toGym = (g: GymRecord): Gym => ({
   isFeatured: g.isFeatured,
   isNearby: g.isNearby,
   openingHours: g.openingHours.map((h) => ({ day: h.day as Weekday, open: h.open, close: h.close })),
+  sectionId: g.sectionId ?? 'gym',
+  categoryIds: (g.categoryIds ?? []).filter((c): c is string => !!c),
+  phone: g.phone ?? null,
+  whatsapp: g.whatsapp ?? null,
+  storeUrl: g.storeUrl ?? null,
+  lat: g.lat ?? null,
+  lng: g.lng ?? null,
+  region: g.region ?? null,
+  serviceMode: (g.serviceMode ?? null) as ServiceMode | null,
+  logo: g.logo ?? null,
 });
+
+// Customers see the facility's discounted price (direct discount carried by the facility; never a code).
+const planPrice = (p: PlanRecord) =>
+  !p.discountType || !p.discountValue
+    ? p.price
+    : p.discountType === 'percent'
+      ? Math.round(p.price * (1 - Math.min(90, p.discountValue) / 100))
+      : Math.max(0, p.price - p.discountValue);
 
 const toPlan = (p: PlanRecord): MembershipPlan => ({
   id: p.id,
   kind: p.kind as PlanKind,
   name: p.name,
-  price: p.price,
+  price: planPrice(p),
   description: p.description,
   badge: p.badge ?? null,
+  allowFreeze: p.allowFreeze === true,
 });
 
 const toTrainer = (t: TrainerRecord): Trainer => ({
@@ -198,6 +223,7 @@ export const toBooking = (b: BookingRecord): Booking => ({
   membershipEnd: b.membershipEnd ?? null,
   paymentMethod: b.paymentMethod as PaymentMethod,
   paymentId: b.paymentId,
+  trainerUnavailable: 'trainerUnavailable' in b ? b.trainerUnavailable === true : false,
 });
 
 export const newestFirst = (a: Booking, b: Booking) => b.createdAt.localeCompare(a.createdAt);
@@ -293,7 +319,51 @@ export const amplifyRepository: Repository = {
   async getPlans(gymId) {
     const { mode } = await session();
     const plans = await listAll((nextToken) => data().models.MembershipPlan.listPlansByGym({ gymId }, { authMode: mode, nextToken }));
-    return plans.map(toPlan);
+    // Plans hidden by the facility are not offered to customers.
+    return plans.filter((p) => p.visible !== false).map(toPlan);
+  },
+  async listSections(): Promise<Section[]> {
+    const { mode } = await session();
+    const { data: sections } = await run(data().queries.listVisibleSections({ authMode: mode }));
+    return required(sections).map((s) => ({
+      slug: s.slug,
+      nameAr: s.nameAr,
+      nameEn: s.nameEn ?? null,
+      descAr: s.descAr ?? null,
+      descEn: s.descEn ?? null,
+      icon: s.icon,
+      colorKey: s.colorKey,
+      order: s.order,
+      bookingMode: s.bookingMode as Section['bookingMode'],
+      hasPractitioners: s.hasPractitioners,
+      hasServices: s.hasServices,
+      hasDepartments: s.hasDepartments,
+      hasPackages: s.hasPackages,
+      hasGallery: s.hasGallery,
+      practitionerLabelAr: s.practitionerLabelAr ?? null,
+      practitionerLabelEn: s.practitionerLabelEn ?? null,
+      presetType: s.presetType as Section['presetType'],
+      categories: s.categories.map((c) => ({ id: c.id, nameAr: c.nameAr, nameEn: c.nameEn ?? null, order: c.order })),
+    }));
+  },
+  // Approved facilities of visible sections (all sections, or one).
+  async listFacilities(sectionId) {
+    const { mode } = await session();
+    const { data: facilities } = await run(data().queries.listApprovedFacilities({ sectionId: sectionId ?? null }, { authMode: mode }));
+    return required(facilities).map(toGym);
+  },
+  async listServices(facilityId): Promise<FacilityService[]> {
+    const { mode } = await session();
+    const items = await listAll((nextToken) => data().models.Service.listServicesByFacility({ facilityId }, { authMode: mode, nextToken }));
+    return items
+      .filter((s) => s.active !== false)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((s) => ({ id: s.id, nameAr: s.nameAr, nameEn: s.nameEn ?? null, categoryId: s.categoryId ?? null, priceQar: s.priceQar, durationMinutes: s.durationMinutes, homeAvailable: s.homeAvailable === true }));
+  },
+  async listDepartments(facilityId): Promise<Department[]> {
+    const { mode } = await session();
+    const items = await listAll((nextToken) => data().models.Department.listDepartmentsByFacility({ facilityId }, { authMode: mode, nextToken }));
+    return items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)).map((d) => ({ id: d.id, nameAr: d.nameAr, nameEn: d.nameEn ?? null }));
   },
   async listTrainers(gymId, specialty) {
     const { mode } = await session();
@@ -357,6 +427,45 @@ export const amplifyRepository: Repository = {
     // A guest booking made on this device (e.g. its Success screen).
     const token = (await readGuestTokens()).find((t) => t.startsWith(`${id}.`));
     return token ? ((await fetchGuestBookings([token], s.mode))[0] ?? null) : null;
+  },
+
+  async listFreezes(bookingId): Promise<MembershipFreeze[]> {
+    await signedInSession();
+    const items = await listAll((nextToken) => data().models.MembershipFreeze.listFreezesByBooking({ bookingId }, { authMode: 'userPool', nextToken }));
+    return items.map((f) => ({ id: f.id, startDate: f.startDate, endDate: f.endDate, days: f.days }));
+  },
+  async freezeMembership(bookingId, startDate, days) {
+    await signedInSession();
+    const { data: result } = await run(data().mutations.freezeMembership({ bookingId, startDate, days }, { authMode: 'userPool' }));
+    return required(result);
+  },
+  async pendingReviewPrompt() {
+    await signedInSession();
+    const { data: pending } = await run(data().queries.pendingReviewPrompt({ authMode: 'userPool' }));
+    return pending ? { bookingId: pending.bookingId, targetType: pending.targetType as 'gym' | 'trainer', targetId: pending.targetId, targetName: pending.targetName } : null;
+  },
+  async submitBookingReview({ bookingId, rating, satisfied, text }) {
+    await signedInSession();
+    await run(data().mutations.submitBookingReview({ bookingId, rating, satisfied, text }, { authMode: 'userPool' }));
+  },
+  async dismissReviewPrompt(bookingId) {
+    await signedInSession();
+    await run(data().mutations.dismissReviewPrompt({ bookingId }, { authMode: 'userPool' }));
+  },
+  async getAddress(): Promise<Address> {
+    const { owner } = await signedInSession();
+    const profile = await getOrNull(data().models.UserProfile.get({ profileOwner: owner }, { authMode: 'userPool' }));
+    return { region: profile?.region ?? '', street: profile?.street ?? '', house: profile?.house ?? '' };
+  },
+  async saveAddress(address) {
+    const { owner } = await signedInSession();
+    await amplifyRepository.getProfile(); // creates the profile on first use
+    await run(
+      data().models.UserProfile.update(
+        { profileOwner: owner, region: address.region.trim() || null, street: address.street.trim() || null, house: address.house.trim() || null },
+        { authMode: 'userPool' },
+      ),
+    );
   },
 
   async getReviewStatus(target) {

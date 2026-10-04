@@ -10,7 +10,7 @@ export const buildPlans = (gymId: string, m: number): MembershipPlan[] => [
   { id: `${gymId}-6m`, kind: '6m', name: '6 Months', price: Math.round(m * 6 * 0.78), description: 'The most considered way to settle into a routine.', badge: 'Most Popular' },
 ];
 
-// Plan ids are `${gymId}-monthly|3m|6m`.
+// Catalogue plan ids are `${gymId}-monthly|3m|6m`.
 export const planKindFromId = (planId: string): PlanKind | null => {
   const suffix = planId.slice(planId.lastIndexOf('-') + 1);
   return suffix === 'monthly' || suffix === '3m' || suffix === '6m' ? suffix : null;
@@ -45,7 +45,7 @@ export const isUpcoming = (b: Booking, now = new Date()) => {
       : endOfDay(new Date(date)) >= now;
 };
 
-export const PLAN_MONTHS: Record<PlanKind, number> = { monthly: 1, '3m': 3, '6m': 6 };
+export const PLAN_MONTHS: Record<PlanKind, number> = { monthly: 1, '2m': 2, '3m': 3, '6m': 6, '12m': 12 };
 
 export const draftTotal = (d: BookingDraft) =>
   d.path === 'membershipPlusTrainer' ? (d.trainer?.pricePerSession ?? 0) : (d.plan?.price ?? d.gym?.monthlyPrice ?? 0);

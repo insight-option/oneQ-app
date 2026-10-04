@@ -619,6 +619,16 @@ const schema = a
       .authorization((allow) => [allow.guest(), allow.authenticated()])
       .handler(a.handler.function(bookings)),
 
+    FreezeResult: a.customType({ freezesUsed: a.integer().required(), membershipEnd: a.string().required() }),
+
+    // Signed-in customers freeze their own membership (plan allows freezing; 2 × up to 30 days).
+    freezeMembership: a
+      .mutation()
+      .arguments({ bookingId: a.id().required(), startDate: a.string().required(), days: a.integer().required() })
+      .returns(a.ref('FreezeResult').required())
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(bookings)),
+
     // Management: cancels a booking and releases its trainer slot. Admin group only (checked again in the function).
     adminCancelBooking: a
       .mutation()

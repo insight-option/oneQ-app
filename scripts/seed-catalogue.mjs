@@ -6,6 +6,7 @@
 //   npm run seed -- --overwrite                   reset existing records to the approved catalogue (default: create missing only)
 //   npm run seed -- --stack <root stack>          a branch deployment, or when more than one OneQ sandbox exists
 //   npm run seed -- --samples                     test branches only: sample facility data for the dashboards
+//   npm run seed -- --publish-samples             test branches only: make the sample facilities visible to customers
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
@@ -30,5 +31,6 @@ const { stack, result } = invokeSandboxFunction('seedcatalogue', {
   overwrite: process.argv.includes('--overwrite'),
   adminOwnerKey: owner,
   samples: process.argv.includes('--samples'),
+  publishSamples: process.argv.includes('--publish-samples'),
 });
 console.log(`Seeded ${stack} (${region}): ${JSON.stringify(result)} · temporary owner: ${owner ? 'admin account' : 'none (no admin in this user pool)'}`);

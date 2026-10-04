@@ -16,7 +16,6 @@ export function ReviewPrompt({ target, name }: { target: ReviewTarget; name: str
   const { t } = useTranslation();
   const signedIn = useSession((s) => s.user !== null);
   const status = useReviewStatus(target, signedIn);
-  const open = () => router.push({ pathname: '/review/[type]/[id]', params: { type: target.type, id: target.id, name } });
 
   if (!signedIn) {
     return (
@@ -24,8 +23,8 @@ export function ReviewPrompt({ target, name }: { target: ReviewTarget; name: str
     );
   }
   if (!status.data) return null;
-  if (status.data.review) return <Button variant="outlined" label={t('reviews.editYours')} onPress={open} />;
-  if (status.data.eligible) return <Button variant="outlined" label={t(`reviews.rate.${target.type}`)} onPress={open} />;
+  // Ratings are given once per completed booking through the rating prompt; there is no "rate" button after it.
+  if (status.data.review || status.data.eligible) return null;
   return (
     <View style={styles.hint}>
       <AppText variant="bodyS" color={colors.textSecondary}>

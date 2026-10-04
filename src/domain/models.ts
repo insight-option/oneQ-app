@@ -6,6 +6,9 @@ export type Weekday = 'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday'
 
 export type OpeningHours = { day: Weekday; open: string; close: string };
 
+export type ServiceMode = 'inShop' | 'home' | 'both';
+
+// A facility of any section (gyms keep their original fields; the facility fields are optional for old data).
 export interface Gym {
   id: string;
   name: string;
@@ -21,9 +24,77 @@ export interface Gym {
   isFeatured: boolean;
   isNearby: boolean;
   openingHours: OpeningHours[];
+  sectionId?: string;
+  categoryIds?: string[];
+  phone?: string | null;
+  whatsapp?: string | null;
+  storeUrl?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  region?: string | null;
+  serviceMode?: ServiceMode | null;
+  logo?: string | null;
 }
 
-export type PlanKind = 'monthly' | '3m' | '6m';
+export interface SectionCategory {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+  order: number;
+}
+
+// A visible section (admin-managed, in display order), with its building blocks.
+export interface Section {
+  slug: string;
+  nameAr: string;
+  nameEn: string | null;
+  descAr: string | null;
+  descEn: string | null;
+  icon: string;
+  colorKey: string;
+  order: number;
+  bookingMode: 'appointment' | 'subscription' | 'both';
+  hasPractitioners: boolean;
+  hasServices: boolean;
+  hasDepartments: boolean;
+  hasPackages: boolean;
+  hasGallery: boolean;
+  practitionerLabelAr: string | null;
+  practitionerLabelEn: string | null;
+  presetType: 'gym' | 'hospital' | 'clinic' | 'salon' | 'other';
+  categories: SectionCategory[];
+}
+
+export interface FacilityService {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+  categoryId: string | null;
+  priceQar: number;
+  durationMinutes: number;
+  homeAvailable: boolean;
+}
+
+export interface Department {
+  id: string;
+  nameAr: string;
+  nameEn: string | null;
+}
+
+export interface Address {
+  region: string;
+  street: string;
+  house: string;
+}
+
+export interface MembershipFreeze {
+  id: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+}
+
+export type PlanKind = 'monthly' | '2m' | '3m' | '6m' | '12m';
 
 export interface MembershipPlan {
   id: string;
@@ -32,6 +103,8 @@ export interface MembershipPlan {
   price: number;
   description: string;
   badge: string | null;
+  // Set by the facility in its dashboard (absent on catalogue plans).
+  allowFreeze?: boolean;
 }
 
 export type Specialty = 'Strength Training' | 'Weight Loss' | 'Mobility' | 'Functional Training';
@@ -118,6 +191,8 @@ export interface Booking {
   membershipEnd?: string | null;
   paymentMethod?: PaymentMethod;
   paymentId?: string;
+  // The facility blocked the trainer; the booking stays and the facility will contact the customer.
+  trainerUnavailable?: boolean;
 }
 
 export interface Account {

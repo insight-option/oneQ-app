@@ -21,7 +21,11 @@
     "home": "Home",
     "bookings": "Bookings",
     "favorites": "Favorites",
-    "profile": "Profile"
+    "profile": "Profile",
+    "map": "Map",
+    "gifts": "Gifts",
+    "orders": "Orders",
+    "account": "Account"
   },
   "greeting": {
     "morning": "Good morning",
@@ -111,11 +115,21 @@
     },
     "badges": {
       "Save 10%": "Save 10%",
-      "Most Popular": "Most Popular"
+      "Most Popular": "Most Popular",
+      "popular": "Most chosen",
+      "bestValue": "Best value"
     },
     "perMonthEquivalent": "{{price}}/mo",
     "error": "Plans could not be loaded.",
-    "unavailable": "This membership is no longer available."
+    "unavailable": "This membership is no longer available.",
+    "2m": {
+      "name": "2 Months",
+      "description": "Two months of full access."
+    },
+    "12m": {
+      "name": "1 Year",
+      "description": "A full year of training."
+    }
   },
   "trainers": {
     "title": "Choose your trainer",
@@ -344,7 +358,9 @@
     "DUPLICATE_REVIEW": "You have already reviewed this. Edit your review instead.",
     "CONFLICT": "Something changed at the same time. Please try again.",
     "payment": "Payment could not be completed.",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "FREEZE_LIMIT": "You have used all freezes; the gym will contact you.",
+    "FREEZE_NOT_ALLOWED": "This membership cannot be frozen."
   },
   "signUp": {
     "title": "Create Account",
@@ -797,6 +813,13 @@
       "newCustomers": "New customers",
       "topServices": "Top services",
       "series": "Appointments"
+    },
+    "location": {
+      "title": "Contacts and location",
+      "storeUrl": "Shop or website link (https)",
+      "pinHint": "Tap the map once to place your facility's pin. Customers see it on the map.",
+      "pinAt": "Pin at {{lat}}, {{lng}}",
+      "noPin": "No pin yet"
     }
   },
   "console": {
@@ -984,5 +1007,105 @@
       "confirmEnable": "Reactivate this account? Its facilities stay suspended until approved again.",
       "suspended": "Account suspended; {{count}} facilities suspended"
     }
+  },
+  "home2": {
+    "headline": "Book the best of Qatar",
+    "sections": "Sections",
+    "allFacilities": "All places",
+    "searchPlaceholder": "Search gyms, clinics, salons…"
+  },
+  "section": {
+    "notFound": "This section is not available",
+    "all": "All",
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "New places are added regularly.",
+    "facilities": "{{count}} places"
+  },
+  "facility": {
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "website": "Website",
+    "book": "Book now",
+    "team": "Team",
+    "departments": "Departments",
+    "services": "Services and prices",
+    "gallery": "Gallery",
+    "openMap": "Show on the map",
+    "serviceMode": {
+      "home": "Home service only",
+      "both": "In the salon and at home"
+    }
+  },
+  "map": {
+    "title": "Map",
+    "chooseSection": "Choose a section, then filter",
+    "pickFirst": "Choose a section to see places on the map.",
+    "mode": {
+      "all": "All",
+      "inShop": "In the salon",
+      "home": "Home service"
+    },
+    "anySpecialty": "Any specialty",
+    "anyService": "Any service",
+    "maxPrice": "Up to QAR {{price}}",
+    "anyPrice": "Any price",
+    "nearest": "Nearest",
+    "minRating": "{{rating}}+ ★",
+    "anyRating": "Any rating",
+    "emptyTitle": "No places match",
+    "emptyBody": "Try other filters.",
+    "km": "{{km}} km",
+    "homeService": "Home service",
+    "locationDenied": "Location permission is needed to sort by distance.",
+    "locationError": "Your location is not available right now.",
+    "unavailable": "The map isn't available in this version",
+    "unavailableBody": "Update the app to the latest version to see it."
+  },
+  "authSheet": {
+    "title": "Sign in to continue",
+    "body": "Browse freely; booking and subscribing need an account.",
+    "notNow": "Not now",
+    "close": "Close"
+  },
+  "ratingPrompt": {
+    "title": "How was your visit to {{name}}?",
+    "satisfied": "Were you satisfied?",
+    "yes": "Yes",
+    "no": "No",
+    "comment": "Comment (optional)",
+    "send": "Send rating",
+    "later": "Not now",
+    "thanks": "Thank you for your rating"
+  },
+  "freeze": {
+    "title": "Freeze membership",
+    "used": "Freezes used: {{used}} of {{count}} (up to {{days}} days each)",
+    "days": "{{count}} days",
+    "contact": "The gym will contact you about another freeze.",
+    "exhausted": "You have used all freezes for this membership.",
+    "requestMore": "Ask the gym for another freeze",
+    "start": "Start (yyyy-mm-dd)",
+    "daysLabel": "Days (1–{{max}})",
+    "daysError": "Between 1 and {{max}} days",
+    "submit": "Freeze",
+    "done": "Frozen. Your membership now ends on {{date}}."
+  },
+  "bookings2": {
+    "trainerUnavailable": "The trainer is unavailable; the gym will contact you."
+  },
+  "address": {
+    "title": "Address",
+    "region": "Area",
+    "street": "Street",
+    "house": "House / building",
+    "houseShort": "No. {{house}}",
+    "none": "No address yet"
+  },
+  "account": {
+    "yourPlaces": "Your places"
+  },
+  "giftsSoon": {
+    "title": "Gifts are coming soon",
+    "body": "Send cash or salon gifts to the people you love."
   }
 }

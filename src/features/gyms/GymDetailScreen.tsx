@@ -18,6 +18,7 @@ import { EmptyState, LoadingState } from '@/components/StateView';
 import { errorMessage } from '@/utils/errorMessage';
 import { useGym, useGymReviews, usePlans, useTrainers } from '@/data';
 import { gymLocation, type AmenityKey, type Gym } from '@/domain/models';
+import { ContactButtons } from '@/features/facility/ContactButtons';
 import { FavoriteButton } from '@/features/favorites/FavoriteButton';
 import { ReviewPrompt } from '@/features/reviews/ReviewPrompt';
 import { track } from '@/services/analytics';
@@ -85,6 +86,8 @@ function GymDetail({ gym }: { gym: Gym }) {
           <AppText color={colors.textSecondary}>{gymLocation(gym)}</AppText>
           <RatingInline rating={gym.rating} reviewCount={gym.reviewCount} />
         </View>
+        {/* Call / WhatsApp / website: shown only when the gym has these contacts. */}
+        <ContactButtons facility={gym} />
 
         <View style={styles.section}>
           <AppText variant="headline">{t('gym.chooseHow')}</AppText>

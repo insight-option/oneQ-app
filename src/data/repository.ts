@@ -1,5 +1,10 @@
 import type {
   Account,
+  Address,
+  Department,
+  FacilityService,
+  MembershipFreeze,
+  Section,
   Booking,
   BookingDraft,
   Gym,
@@ -36,7 +41,9 @@ export type RepositoryErrorCode =
   | 'RATE_LIMITED'
   | 'NETWORK'
   | 'UNAUTHORIZED'
-  | 'SESSION_EXPIRED';
+  | 'SESSION_EXPIRED'
+  | 'FREEZE_LIMIT'
+  | 'FREEZE_NOT_ALLOWED';
 
 export class RepositoryError extends Error {
   readonly code: RepositoryErrorCode;
@@ -61,6 +68,25 @@ export interface Repository {
   listReviews(by: { gymId: string } | { trainerId: string }): Promise<Review[]>;
   // The next 14 days (Asia/Qatar), computed by the server.
   getAvailability(trainerId: string): Promise<AvailabilityDay[]>;
+
+  // Dynamic sections and facilities (customers see visible sections and approved facilities only).
+  listSections(): Promise<Section[]>;
+  listFacilities(sectionId?: string | null): Promise<Gym[]>;
+  listServices(facilityId: string): Promise<FacilityService[]>;
+  listDepartments(facilityId: string): Promise<Department[]>;
+
+  // Membership freeze (2 × up to 30 days when the plan allows it).
+  listFreezes(bookingId: string): Promise<MembershipFreeze[]>;
+  freezeMembership(bookingId: string, startDate: string, days: number): Promise<{ freezesUsed: number; membershipEnd: string }>;
+
+  // One-time rating prompt for a completed booking.
+  pendingReviewPrompt(): Promise<{ bookingId: string; targetType: 'gym' | 'trainer'; targetId: string; targetName: string } | null>;
+  submitBookingReview(input: { bookingId: string; rating: number; satisfied: boolean | null; text: string }): Promise<void>;
+  dismissReviewPrompt(bookingId: string): Promise<void>;
+
+  // Full address kept in the user's profile (UserProfile), never in Cognito attributes.
+  getAddress(): Promise<Address>;
+  saveAddress(address: Address): Promise<void>;
 
   // Validates the draft (slot still free, no duplicate) and returns the server-side price.
   quoteBooking(draft: BookingDraft): Promise<{ priceQar: number }>;

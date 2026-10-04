@@ -9,6 +9,8 @@ import { Screen } from '@/components/Screen';
 import { signOut } from '@/features/auth/session';
 import { useSession } from '@/features/auth/sessionStore';
 import { currentLanguage, type Language } from '@/i18n';
+
+import { AddressCard } from './AddressCard';
 import { makeStyles, radius, space, useTheme } from '@/theme';
 
 // S19
@@ -51,6 +53,10 @@ export function ProfileScreen() {
           {user.isAdmin ? <Row label={t('admin.title')} href="/admin" /> : null}
         </Group>
       ) : null}
+      {user ? <AddressCard /> : null}
+      <Group label={t('account.yourPlaces')}>
+        <Row label={t('tabs.favorites')} href={'/favorites' as Href} />
+      </Group>
       <Group label={t('profile.support')}>
         <Row label={t('profile.help')} href="/info/help" />
       </Group>

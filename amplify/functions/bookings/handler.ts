@@ -93,9 +93,11 @@ async function validateDraft(args: Args) {
     const planId = text(args.planId, 64) ?? fail('VALIDATION');
     const plan = await unwrap(client.models.MembershipPlan.get({ id: planId }));
     if (!plan || plan.gymId !== gym.id) fail('INVALID_BOOKING');
+    // Hidden plans cannot be bought; the facility's direct discount (percent or amount) lowers the price.
+    if (plan.visible === false) fail('INVALID_BOOKING');
     // Fast check for the quote; placeBooking also takes the atomic MembershipLock.
     if (await hasActiveMembership(phone, gym.id, ymd(now))) fail('DUPLICATE_BOOKING');
-    return { kind: 'membership' as const, gym, plan, guest, priceQar: plan.price };
+    return { kind: 'membership' as const, gym, plan, guest, priceQar: discounted(plan) };
   }
 
   const trainerId = text(args.trainerId, 64) ?? fail('VALIDATION');
@@ -120,6 +122,54 @@ async function validateDraft(args: Args) {
   const startAt = slotStart(date, minutes);
   if (await unwrap(client.models.SlotReservation.get({ trainerId, startAt }))) fail('SLOT_TAKEN');
   return { kind: 'session' as const, gym, trainer, date, minutes, startAt, guest, priceQar: trainer.pricePerSession };
+}
+
+const discounted = (p: { price: number; discountType?: string | null; discountValue?: number | null }) =>
+  !p.discountType || !p.discountValue
+    ? p.price
+    : p.discountType === 'percent'
+      ? Math.round(p.price * (1 - Math.min(90, p.discountValue) / 100))
+      : Math.max(0, p.price - p.discountValue);
+
+// ── Membership freeze (customer, when the plan allows it): at most 2 per membership, each up to 30 days. The
+// membership end moves by the frozen days. A request beyond the limit is refused and the facility is notified,
+// so it can contact the customer. ──
+
+const FREEZE_LIMIT = { count: 2, days: 30 };
+
+async function freezeMembership(args: Args, owner: string | null) {
+  if (!owner) fail('UNAUTHORIZED');
+  const bookingId = text(args.bookingId, 64) ?? fail('VALIDATION');
+  const days = typeof args.days === 'number' && Number.isInteger(args.days) && args.days >= 1 && args.days <= FREEZE_LIMIT.days ? args.days : fail('VALIDATION');
+  const start = parseDay(args.startDate) ?? fail('VALIDATION');
+  const booking = (await unwrap(client.models.Booking.get({ id: bookingId }))) ?? fail('NOT_FOUND');
+  if (!sameOwner(booking.owner, owner)) fail('NOT_FOUND');
+  const today = ymd(qatarNow());
+  if (booking.type !== 'membership' || booking.status !== 'confirmed' || !booking.membershipEnd || booking.membershipEnd < today) fail('INVALID_BOOKING');
+  if (ymd(start) < today || ymd(start) > booking.membershipEnd) fail('VALIDATION');
+  const plan = booking.planId ? await unwrap(client.models.MembershipPlan.get({ id: booking.planId })) : null;
+  if (!plan?.allowFreeze) fail('FREEZE_NOT_ALLOWED');
+  const freezes = check(await client.models.MembershipFreeze.listFreezesByBooking({ bookingId })).data;
+  if (freezes.length >= FREEZE_LIMIT.count) {
+    const gym = await unwrap(client.models.Gym.get({ id: booking.gymId }));
+    if (gym?.ownerId) {
+      check(
+        await client.models.Notification.create({
+          recipient: gym.ownerId,
+          kind: 'freezeLimit',
+          params: JSON.stringify({ bookingId, customerName: booking.guest.fullName, planName: booking.planName, facilityId: gym.id }),
+        }),
+      );
+    }
+    fail('FREEZE_LIMIT');
+  }
+  const endDate = ymd(addDays(start, days - 1));
+  check(await client.models.MembershipFreeze.create({ bookingId, gymId: booking.gymId, owner, startDate: ymd(start), endDate, days }));
+  const membershipEnd = ymd(addDays(new Date(`${booking.membershipEnd}T00:00:00`), days));
+  check(await client.models.Booking.update({ id: booking.id, membershipEnd }));
+  // Keep the duplicate-membership lock in step with the new end date.
+  await mutateIf(client, 'update', 'MembershipLock', { guestPhone: booking.guestPhone, gymId: booking.gymId, membershipEnd }, { bookingId: { eq: booking.id } });
+  return { freezesUsed: freezes.length + 1, membershipEnd };
 }
 
 // ── Operations ──
@@ -363,6 +413,8 @@ export const handler = async (event: ResolverEvent) => {
       return guestBookings(args.tokens);
     case 'adminCancelBooking':
       return adminCancelBooking(args.id, args.reason, event.identity);
+    case 'freezeMembership':
+      return freezeMembership(args, ownerOf(event.identity));
     default:
       throw new Error('UNSUPPORTED_OPERATION');
   }

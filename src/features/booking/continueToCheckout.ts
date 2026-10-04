@@ -1,17 +1,19 @@
 import { router } from 'expo-router';
 
+import { useAuthSheet } from '@/features/auth/AuthSheet';
 import { useSession } from '@/features/auth/sessionStore';
 
 import { useDraft } from './draftStore';
 
-// Plans / Booking "Continue": signed-in users skip S12 and use their account details (03 §3, §5).
+// Plans / Booking "Continue": signed-in users go to Checkout with their account details. Guests browse freely;
+// this first action asks them to sign in or create an account (bottom sheet), then continues to Checkout.
 export function continueToCheckout() {
   const { user } = useSession.getState();
   if (user) {
     useDraft.getState().setGuest({ fullName: user.fullName, phone: user.phone, email: user.email });
     router.push('/checkout');
   } else {
-    router.push('/checkout/guest');
+    useAuthSheet.getState().show('checkout');
   }
 }
 

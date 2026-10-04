@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { EmptyState, LoadingState } from '@/components/StateView';
@@ -10,10 +11,11 @@ import { SummaryCard } from '@/components/SummaryCard';
 import { useBooking } from '@/data';
 import type { Booking } from '@/domain/models';
 import { ltr } from '@/i18n';
-import { space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { localizeTime, longDate, qar } from '@/utils/format';
 
 import { planName } from './BookingCard';
+import { FreezePanel } from './FreezePanel';
 import { useAddToCalendar } from './useAddToCalendar';
 
 // S17 summary rows; only rows with a value are shown. Shared with S15.
@@ -66,12 +68,19 @@ export function BookingDetailsScreen({ id }: { id: string }) {
 }
 
 function Details({ booking }: { booking: Booking }) {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const calendar = useAddToCalendar();
   const rows = useBookingRows(booking);
   return (
     <Screen scroll edges={[]} contentStyle={styles.content}>
+      {booking.trainerUnavailable && booking.status === 'confirmed' ? (
+        <View style={[styles.notice, { backgroundColor: colors.primaryTint }]}>
+          <AppText variant="label">{t('bookings2.trainerUnavailable')}</AppText>
+        </View>
+      ) : null}
       <SummaryCard title={t('booking.summary')} rows={rows} total={{ label: t('checkout.total'), value: qar(booking.priceQar) }} />
+      <FreezePanel booking={booking} />
       <View style={styles.actions}>
         <Button variant="outlined" label={t('success.addToCalendar')} onPress={() => calendar.add(booking)} loading={calendar.busy} />
         <Button label={t('success.backToHome')} onPress={() => router.navigate('/home')} />
@@ -83,4 +92,5 @@ function Details({ booking }: { booking: Booking }) {
 const styles = StyleSheet.create({
   content: { gap: space.xxl },
   actions: { gap: space.md },
+  notice: { padding: space.lg, borderRadius: 16 },
 });

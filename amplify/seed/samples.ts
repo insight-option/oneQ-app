@@ -53,7 +53,8 @@ export const sampleGym = (ownerId: string | null) => ({
   region: 'Al Sadd',
   lat: 25.2846,
   lng: 51.4947,
-  ...(ownerId ? { ownerId } : {}),
+  // Written every run, so the sample facilities lose a temporary owner once that account is gone.
+  ownerId,
 });
 
 export const SAMPLE_PLANS = [
@@ -282,7 +283,7 @@ export const sampleAppointmentFacility = (f: AppointmentFacility, ownerId: strin
   lat: f.lat,
   lng: f.lng,
   ...(f.serviceMode ? { serviceMode: f.serviceMode } : {}),
-  ...(ownerId ? { ownerId } : {}),
+  ownerId,
 });
 
 const SALON_SERVICES = [
