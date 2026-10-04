@@ -31,6 +31,6 @@ const { stack, result } = invokeSandboxFunction('seedcatalogue', {
   overwrite: process.argv.includes('--overwrite'),
   adminOwnerKey: owner,
   samples: process.argv.includes('--samples'),
-  publishSamples: process.argv.includes('--publish-samples'),
+  publishDemo: process.argv.includes('--publish-samples'),
 });
 console.log(`Seeded ${stack} (${region}): ${JSON.stringify(result)} · temporary owner: ${owner ? 'admin account' : 'none (no admin in this user pool)'}`);

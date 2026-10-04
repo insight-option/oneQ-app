@@ -42,21 +42,39 @@ async function upsert(label: string, get: () => Promise<Result>, create: () => P
   return found.data ? 'updated' : 'created';
 }
 
-const ratingSum = (rating: number, count: number) => Math.round(rating * count * 10) / 10;
-
-async function backfillRatingSums() {
-  let n = 0;
-  const gyms = check(await client.models.Gym.list({ limit: 1000 })).data;
-  for (const g of gyms.filter((x) => x.ratingSum == null && x.reviewCount != null)) {
-    check(await client.models.Gym.update({ id: g.id, ratingSum: ratingSum(g.rating ?? 0, g.reviewCount ?? 0) }));
-    n += 1;
+// Ratings come from the stored reviews: average (1 decimal, as in the reviews function), count and sum for every
+// facility and trainer. The seed writes reviews directly, not through the reviews function that keeps these
+// aggregates current, so every seed run recomputes them afterwards (no imported or missing aggregates).
+async function recomputeRatings() {
+  const totals = new Map<string, { sum: number; count: number }>();
+  const add = (key: string, rating: number) => {
+    const t = totals.get(key) ?? { sum: 0, count: 0 };
+    totals.set(key, { sum: t.sum + rating, count: t.count + 1 });
+  };
+  for (const r of await listAll((nextToken) => client.models.Review.list({ nextToken, limit: 100 }))) {
+    if (r.gymId) add(`gym:${r.gymId}`, r.rating);
+    if (r.trainerId) add(`trainer:${r.trainerId}`, r.rating);
   }
-  const trainers = check(await client.models.Trainer.list({ limit: 1000 })).data;
-  for (const t of trainers.filter((x) => x.ratingSum == null && x.reviewCount != null)) {
-    check(await client.models.Trainer.update({ id: t.id, ratingSum: ratingSum(t.rating ?? 0, t.reviewCount ?? 0) }));
-    n += 1;
+  const aggregate = (key: string) => {
+    const { sum, count } = totals.get(key) ?? { sum: 0, count: 0 };
+    return { rating: count === 0 ? 0 : Math.round((sum / count) * 10) / 10, reviewCount: count, ratingSum: sum };
+  };
+  const same = (x: { rating?: number | null; reviewCount?: number | null; ratingSum?: number | null }, next: ReturnType<typeof aggregate>) =>
+    x.rating === next.rating && x.reviewCount === next.reviewCount && x.ratingSum === next.ratingSum;
+  let updated = 0;
+  for (const g of await listAll((nextToken) => client.models.Gym.list({ nextToken, limit: 100 }))) {
+    const next = aggregate(`gym:${g.id}`);
+    if (same(g, next)) continue;
+    check(await client.models.Gym.update({ id: g.id, ...next }));
+    updated += 1;
   }
-  return n;
+  for (const t of await listAll((nextToken) => client.models.Trainer.list({ nextToken, limit: 100 }))) {
+    const next = aggregate(`trainer:${t.id}`);
+    if (same(t, next)) continue;
+    check(await client.models.Trainer.update({ id: t.id, ...next }));
+    updated += 1;
+  }
+  return updated;
 }
 
 // Preset sections and their categories (category ids are derived from the section and position).
@@ -170,8 +188,8 @@ async function seedIsolationFixtures({ ownerA, ownerB }: { ownerA: string; owner
   return records.map((r) => r.id);
 }
 
-// Sample dashboard data (test branch only): a sample gym with plans, trainers, members, sessions, freezes and
-// reviews. Records are keyed by fixed "sample-" ids and rewritten on every run; nothing else is touched.
+// Demo data (test branch only): a gym with plans, trainers, members, sessions, freezes and reviews, then a salon
+// and a clinic. Records are keyed by fixed "sample-" ids and rewritten on every run; nothing else is touched.
 async function seedSamples(adminOwnerKey: string | null) {
   const saved = overwrite;
   overwrite = true;
@@ -225,6 +243,7 @@ async function seedSamples(adminOwnerKey: string | null) {
   }
   overwrite = saved;
   return {
+    ratings: await recomputeRatings(),
     sampleGym: gym.id,
     plans: SAMPLE_PLANS.length,
     trainers: SAMPLE_TRAINERS.length,
@@ -236,8 +255,8 @@ async function seedSamples(adminOwnerKey: string | null) {
   };
 }
 
-// Test branch: the sample facilities become visible to customers (the client app's sections and map).
-async function publishSamples() {
+// Test branch: the demo facilities become visible to customers (the client app's sections and map).
+async function publishDemo() {
   const ids = ['sample-gym', 'sample-salon', 'sample-clinic'];
   for (const id of ids) {
     const g = await unwrap(client.models.Gym.get({ id }));
@@ -251,26 +270,25 @@ type SeedEvent = {
   adminOwnerKey?: string | null;
   isolationFixtures?: { ownerA: string; ownerB: string };
   samples?: boolean;
-  publishSamples?: boolean;
+  publishDemo?: boolean;
 };
 
 export const handler = async (event?: SeedEvent) => {
   overwrite = event?.overwrite === true;
   if (event?.isolationFixtures) return { isolationFixtures: await seedIsolationFixtures(event.isolationFixtures) };
   if (event?.samples) return { samples: await seedSamples(event.adminOwnerKey ?? null) };
-  if (event?.publishSamples) return { published: await publishSamples() };
+  if (event?.publishDemo) return { published: await publishDemo() };
   const outcome = { created: 0, updated: 0, unchanged: 0 };
   const count = (r: 'created' | 'updated' | 'unchanged') => (outcome[r] += 1);
 
   await seedSections(count);
 
-  for (const [sortOrder, { id, ...gym }] of GYMS.entries()) {
-    // ratingSum = the imported average × count, so later verified reviews update the average correctly.
+  // The catalogue's rating figures are not written: recomputeRatings() stores the aggregates of the seeded reviews.
+  for (const [sortOrder, { id, rating, reviewCount, ...gym }] of GYMS.entries()) {
     const record = {
       id,
       ...gym,
       sortOrder,
-      ratingSum: ratingSum(gym.rating, gym.reviewCount),
       sectionId: 'gym',
       status: 'approved' as const,
       createdBy: 'owner' as const,
@@ -291,8 +309,8 @@ export const handler = async (event?: SeedEvent) => {
     }
   }
 
-  for (const [sortOrder, trainer] of TRAINERS.entries()) {
-    const record = { ...trainer, sortOrder, ratingSum: ratingSum(trainer.rating, trainer.reviewCount) };
+  for (const [sortOrder, { rating, reviewCount, ...trainer }] of TRAINERS.entries()) {
+    const record = { ...trainer, sortOrder };
     count(
       await upsert(
         `Trainer ${trainer.id}`,
@@ -328,15 +346,14 @@ export const handler = async (event?: SeedEvent) => {
     );
   }
 
-  // Records created before rating aggregates existed get their ratingSum (nothing else is touched).
-  const backfilled = await backfillRatingSums();
   const migrated = await migrateFacilities(event?.adminOwnerKey ?? null);
+  const ratings = await recomputeRatings();
 
   const plans = GYMS.length * 3;
   return {
     ...outcome,
-    backfilled,
     migrated,
+    ratings,
     sections: SECTIONS.length,
     gyms: GYMS.length,
     plans,

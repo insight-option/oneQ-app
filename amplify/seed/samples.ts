@@ -1,8 +1,9 @@
 import { addDays, addMonths, format } from 'date-fns';
 
-// Sample data for the test branch only, so the facility dashboards are not empty. Every id starts with
-// "sample-"; facility and people names are invented. Generated relative to the day the seed runs, with a fixed
-// pseudo-random sequence, so running the seed again rewrites the same records.
+// Demo data for the test branch only, so the facility dashboards and the client app are not empty. Ids keep the
+// technical "sample-" prefix; facility and people names are invented and the content is Arabic (the catalogue's
+// required language). Generated relative to the day the seed runs, with a fixed pseudo-random sequence, so
+// running the seed again rewrites the same records.
 
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
 
@@ -15,8 +16,8 @@ function sequence(seed: number) {
   return { next, int: (min: number, max: number) => min + Math.floor(next() * (max - min + 1)), pick: <T,>(list: readonly T[]) => list[Math.floor(next() * list.length)]! };
 }
 
-const FIRST = ['Ahmed', 'Fatima', 'Omar', 'Mariam', 'Yousef', 'Noor', 'Khalid', 'Sara', 'Hamad', 'Aisha', 'Ali', 'Reem', 'Faisal', 'Hessa', 'Nasser', 'Dana', 'Majed', 'Latifa', 'Saad', 'Huda'] as const;
-const LAST = ['Haddad', 'Saleh', 'Mansour', 'Nasser', 'Karim', 'Yousef', 'Hamdan', 'Aziz', 'Rahman', 'Fares'] as const;
+const FIRST = ['أحمد', 'فاطمة', 'عمر', 'مريم', 'يوسف', 'نور', 'خالد', 'سارة', 'حمد', 'عائشة', 'علي', 'ريم', 'فيصل', 'حصة', 'ناصر', 'دانة', 'ماجد', 'لطيفة', 'سعد', 'هدى'] as const;
+const LAST = ['الحداد', 'الصالح', 'المنصوري', 'النعيمي', 'الكبيسي', 'اليوسف', 'الحمدان', 'العزيزي', 'الهاجري', 'الفارس'] as const;
 
 const unsplash = (id: string, w: number) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -27,13 +28,16 @@ const HOURS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday
 }));
 
 export const SAMPLE_GYM_ID = 'sample-gym';
+// English name (no English name field in the Gym model yet): Al Saqr Fitness.
+const GYM_NAME = 'نادي الصقر';
+const GYM_LOCATION = 'السد، الدوحة';
 
 export const sampleGym = (ownerId: string | null) => ({
   id: SAMPLE_GYM_ID,
-  name: 'Sample Fitness Club',
+  name: GYM_NAME,
   area: 'Al Sadd',
-  description: 'Sample data for the OneQ dashboards (test branch). Members, bookings and reviews are invented.',
-  address: 'Sample Street, Al Sadd, Doha',
+  description: 'نادٍ رياضي في السد بصالة أوزان واسعة وأجهزة كارديو حديثة وساونا، ومدربون معتمدون لكل المستويات.',
+  address: 'شارع السد، السد، الدوحة',
   monthlyPrice: 250,
   trainerFromMonthly: 450,
   images: [unsplash('1593079831268-3381b0db4a77', 1400), unsplash('1554344728-77cf90d9ed26', 1400), unsplash('1571019614242-c5c5dee9f50b', 1400)],
@@ -43,7 +47,7 @@ export const sampleGym = (ownerId: string | null) => ({
   isNearby: false,
   sortOrder: 800,
   sectionId: 'gym',
-  // Not public until the client screens for sections exist (Phase 5); owners and admins see it in the dashboards.
+  // Written as pending; `--publish-samples` approves the demo facilities on the test branch.
   status: 'pending' as const,
   statusReason: 'sample',
   createdBy: 'admin' as const,
@@ -53,22 +57,22 @@ export const sampleGym = (ownerId: string | null) => ({
   region: 'Al Sadd',
   lat: 25.2846,
   lng: 51.4947,
-  // Written every run, so the sample facilities lose a temporary owner once that account is gone.
+  // Written every run, so the demo facilities lose a temporary owner once that account is gone.
   ownerId,
 });
 
 export const SAMPLE_PLANS = [
-  { months: 1, name: 'Monthly', price: 250, badge: null },
-  { months: 2, name: '2 Months', price: 470, badge: null },
-  { months: 3, name: '3 Months', price: 675, badge: 'popular' },
-  { months: 6, name: '6 Months', price: 1250, badge: null },
-  { months: 12, name: 'Annual', price: 2300, badge: 'bestValue' },
+  { months: 1, name: 'شهري', price: 250, badge: null },
+  { months: 2, name: 'شهران', price: 470, badge: null },
+  { months: 3, name: '3 أشهر', price: 675, badge: 'popular' },
+  { months: 6, name: '6 أشهر', price: 1250, badge: null },
+  { months: 12, name: 'سنوي', price: 2300, badge: 'bestValue' },
 ].map((p) => ({
   id: `sample-gym-plan-${p.months}m`,
   gymId: SAMPLE_GYM_ID,
   kind: p.months === 1 ? 'monthly' : `${p.months}m`,
   name: p.name,
-  description: 'Sample plan',
+  description: 'دخول كامل لصالة الأوزان والكارديو والساونا.',
   price: p.price,
   durationMonths: p.months,
   badge: p.badge,
@@ -79,21 +83,21 @@ export const SAMPLE_PLANS = [
 }));
 
 export const SAMPLE_TRAINERS = [
-  { id: 'sample-trainer-rami', name: 'Rami Haddad', title: 'Strength Coach', image: unsplash('1571019614242-c5c5dee9f50b', 900), specialties: ['Strength Training'], skills: ['Powerlifting', 'Mobility'], years: 8, price: 220, languages: ['English', 'Arabic'] },
-  { id: 'sample-trainer-lina', name: 'Lina Saleh', title: 'Functional Training Coach', image: unsplash('1518611012118-696072aa579a', 900), specialties: ['Functional Training', 'Mobility'], skills: ['HIIT', 'Rehab'], years: 6, price: 200, languages: ['English', 'Arabic'] },
-  { id: 'sample-trainer-tariq', name: 'Tariq Mansour', title: 'Weight Loss Coach', image: unsplash('1583454110551-21f2fa2afe61', 900), specialties: ['Weight Loss'], skills: ['Nutrition', 'Cardio'], years: 5, price: 180, languages: ['Arabic'] },
+  { id: 'sample-trainer-rami', name: 'رامي الحداد', title: 'مدرب قوة', bio: 'يبني برامج قوة واضحة وآمنة، مع اهتمام خاص بالحركة الصحيحة.', image: unsplash('1571019614242-c5c5dee9f50b', 900), specialties: ['Strength Training'], skills: ['Powerlifting', 'Mobility'], years: 8, price: 220, languages: ['English', 'Arabic'] },
+  { id: 'sample-trainer-lina', name: 'لينا صالح', title: 'مدربة تدريب وظيفي', bio: 'تدريبات وظيفية قصيرة ومركّزة تناسب الجداول المزدحمة.', image: unsplash('1518611012118-696072aa579a', 900), specialties: ['Functional Training', 'Mobility'], skills: ['HIIT', 'Rehab'], years: 6, price: 200, languages: ['English', 'Arabic'] },
+  { id: 'sample-trainer-tariq', name: 'طارق منصور', title: 'مدرب إنقاص وزن', bio: 'يجمع التمرين والتغذية في خطة واقعية يمكن الالتزام بها.', image: unsplash('1583454110551-21f2fa2afe61', 900), specialties: ['Weight Loss'], skills: ['Nutrition', 'Cardio'], years: 5, price: 180, languages: ['Arabic'] },
 ].map((t, i) => ({
   id: t.id,
   gymId: SAMPLE_GYM_ID,
   name: t.name,
   title: t.title,
-  bio: 'Sample trainer profile for the dashboards.',
+  bio: t.bio,
   image: t.image,
   yearsExperience: t.years,
   languages: t.languages,
   specialties: t.specialties,
   skills: t.skills,
-  certifications: ['Sample certification'],
+  certifications: ['مدرب شخصي معتمد'],
   pricePerSession: t.price,
   sortOrder: i,
 }));
@@ -127,8 +131,8 @@ export function sampleActivity(today: Date) {
       id: `sample-gym-member-${i + 1}`,
       type: 'membership',
       gymId: SAMPLE_GYM_ID,
-      gymName: 'Sample Fitness Club',
-      gymLocation: 'Al Sadd, Doha',
+      gymName: GYM_NAME,
+      gymLocation: GYM_LOCATION,
       planId: plan.id,
       planName: plan.name,
       sessionCount: 1,
@@ -155,8 +159,8 @@ export function sampleActivity(today: Date) {
       id: `sample-gym-session-${i + 1}`,
       type: 'session',
       gymId: SAMPLE_GYM_ID,
-      gymName: 'Sample Fitness Club',
-      gymLocation: 'Al Sadd, Doha',
+      gymName: GYM_NAME,
+      gymLocation: GYM_LOCATION,
       trainerId: trainer.id,
       trainerName: trainer.name,
       date: startAt(day, minutes),
@@ -191,39 +195,41 @@ export function sampleActivity(today: Date) {
   }));
 
   const TEXTS = [
-    'Clean, calm and well equipped.',
-    'Great coaches and friendly staff.',
-    'Busy in the evenings but worth it.',
-    'Excellent strength area.',
-    'Good value for the annual plan.',
-    'Changing rooms could be bigger.',
-    'Love the sauna after training.',
-    'Trainer sessions are very professional.',
+    'نظيف وهادئ ومجهّز بشكل ممتاز.',
+    'مدربون رائعون وطاقم ودود.',
+    'مزدحم مساءً لكنه يستحق.',
+    'منطقة الأوزان ممتازة.',
+    'قيمة جيدة في الاشتراك السنوي.',
+    'غرف تبديل الملابس تحتاج مساحة أكبر.',
+    'الساونا بعد التمرين رائعة.',
+    'جلسات المدرب احترافية جداً.',
   ];
   const reviews = [...Array(10)].map((_, i) => {
     const trainer = i >= 7 ? SAMPLE_TRAINERS[i - 7]! : null;
     return {
       id: `sample-gym-review-${i + 1}`,
       ...(trainer ? { trainerId: trainer.id } : { gymId: SAMPLE_GYM_ID }),
-      authorName: `${FIRST[(i * 3) % FIRST.length]} ${LAST[i % LAST.length]![0]}.`,
+      authorName: `${FIRST[(i * 3) % FIRST.length]} ${LAST[i % LAST.length]}`,
       rating: [5, 5, 4, 5, 4, 3, 5, 5, 4, 5][i]!,
       date: ymd(addDays(today, -r.int(1, 120))),
       text: TEXTS[i % TEXTS.length]!,
       satisfied: i !== 5,
-      ...(i === 1 ? { ownerReply: 'Thank you! See you at the club.', ownerReplyAt: today.toISOString() } : {}),
+      ...(i === 1 ? { ownerReply: 'شكراً لك! نراك في النادي.', ownerReplyAt: today.toISOString() } : {}),
     };
   });
 
   return { memberships, sessions: uniqueSessions, freezes, reviews };
 }
 
-// ── Salon and clinic samples (Phase 4) ──
+// ── Salon and clinic demo facilities (Phase 4) ──
 
 type AppointmentFacility = {
   id: string;
   sectionId: 'salon' | 'clinic';
   name: string;
   area: string;
+  location: string;
+  address: string;
   description: string;
   serviceMode: 'inShop' | 'home' | 'both' | null;
   lat: number;
@@ -232,12 +238,15 @@ type AppointmentFacility = {
   images: string[];
 };
 
+// English name: Dar Al Jouri Beauty.
 export const SAMPLE_SALON: AppointmentFacility = {
   id: 'sample-salon',
   sectionId: 'salon',
-  name: 'Sample Beauty Salon',
+  name: 'دار الجوري للتجميل',
   area: 'Al Waab',
-  description: 'Sample data for the OneQ salon dashboard (test branch). Clients and bookings are invented.',
+  location: 'الوعب، الدوحة',
+  address: 'شارع الوعب، الوعب، الدوحة',
+  description: 'صالون نسائي في الوعب للشعر والأظافر والمكياج والعناية بالبشرة والحناء، مع خدمة منزلية لعدد من الخدمات.',
   serviceMode: 'both',
   lat: 25.2602,
   lng: 51.4458,
@@ -245,12 +254,15 @@ export const SAMPLE_SALON: AppointmentFacility = {
   images: [unsplash('1560066984-138dadb4c035', 1400), unsplash('1522337360788-8b13dee7a37e', 1400)],
 };
 
+// English name: Haraka Physiotherapy Center.
 export const SAMPLE_CLINIC: AppointmentFacility = {
   id: 'sample-clinic',
   sectionId: 'clinic',
-  name: 'Sample Family Clinic',
+  name: 'مركز حركة للعلاج الطبيعي',
   area: 'Al Sadd',
-  description: 'Sample data for the OneQ clinic dashboard (test branch). Patients and appointments are invented.',
+  location: 'السد، الدوحة',
+  address: 'شارع السد، السد، الدوحة',
+  description: 'مركز في السد للعلاج الطبيعي وطب الإصابات الرياضية، مع عيادتي طب عام وجلدية.',
   serviceMode: null,
   lat: 25.2889,
   lng: 51.5022,
@@ -263,7 +275,7 @@ export const sampleAppointmentFacility = (f: AppointmentFacility, ownerId: strin
   name: f.name,
   area: f.area,
   description: f.description,
-  address: `Sample Street, ${f.area}, Doha`,
+  address: f.address,
   monthlyPrice: 0,
   trainerFromMonthly: 0,
   images: f.images,
@@ -327,21 +339,21 @@ export const SAMPLE_DEPARTMENTS = [
 export const samplePractitioners = (f: AppointmentFacility) =>
   (f.sectionId === 'salon'
     ? [
-        { key: 'huda', name: 'Huda Karim', title: 'Hair specialist', dep: null },
-        { key: 'reem', name: 'Reem Aziz', title: 'Nail and makeup artist', dep: null },
-        { key: 'lulwa', name: 'Lulwa Fares', title: 'Skin care specialist', dep: null },
+        { key: 'huda', name: 'هدى كريم', title: 'أخصائية شعر', bio: 'قص وتصفيف وصبغات بخبرة طويلة في الشعر الخليجي.', dep: null },
+        { key: 'reem', name: 'ريم عزيز', title: 'خبيرة أظافر ومكياج', bio: 'مكياج المناسبات والعناية بالأظافر في الصالون أو المنزل.', dep: null },
+        { key: 'lulwa', name: 'لولوة فارس', title: 'أخصائية عناية بالبشرة', bio: 'جلسات تنظيف وترطيب للبشرة حسب نوعها.', dep: null },
       ]
     : [
-        { key: 'dr-sami', name: 'Dr. Sami Nasser', title: 'General practitioner', dep: 'sample-clinic-dep-general' },
-        { key: 'dr-dana', name: 'Dr. Dana Rahman', title: 'Physiotherapist', dep: 'sample-clinic-dep-physio' },
-        { key: 'dr-faisal', name: 'Dr. Faisal Hamdan', title: 'Dermatologist', dep: 'sample-clinic-dep-derma' },
+        { key: 'dr-sami', name: 'د. سامي ناصر', title: 'طبيب عام', bio: 'استشارات الطب العام والفحوص الدورية.', dep: 'sample-clinic-dep-general' },
+        { key: 'dr-dana', name: 'د. دانة عبدالرحمن', title: 'أخصائية علاج طبيعي', bio: 'تأهيل الإصابات الرياضية وآلام الظهر والمفاصل.', dep: 'sample-clinic-dep-physio' },
+        { key: 'dr-faisal', name: 'د. فيصل حمدان', title: 'طبيب جلدية', bio: 'استشارات الجلدية والعناية بالبشرة.', dep: 'sample-clinic-dep-derma' },
       ]
   ).map((p, i) => ({
     id: `${f.id}-pr-${p.key}`,
     gymId: f.id,
     name: p.name,
     title: p.title,
-    bio: 'Sample profile for the dashboards.',
+    bio: p.bio,
     image: unsplash(f.sectionId === 'salon' ? '1580618672591-eb180b1a973f' : '1612349317150-e413f6a5b16d', 900),
     yearsExperience: 4 + i * 3,
     languages: ['Arabic', 'English'],
@@ -373,11 +385,11 @@ export function sampleAppointments(f: AppointmentFacility, today: Date, seed: nu
       type: 'appointment',
       gymId: f.id,
       gymName: f.name,
-      gymLocation: `${f.area}, Doha`,
+      gymLocation: f.location,
       trainerId: practitioner.id,
       trainerName: practitioner.name,
       serviceId: service.id,
-      serviceName: service.nameEn,
+      serviceName: service.nameAr,
       departmentId: practitioner.departmentId ?? null,
       date: startAt(day, minutes),
       timeLabel: timeLabel(minutes),
@@ -393,13 +405,15 @@ export function sampleAppointments(f: AppointmentFacility, today: Date, seed: nu
       sectionId: f.sectionId,
     };
   });
+  const SALON_TEXTS = ['فريق لطيف ونظافة ممتازة.', 'نقش حناء جميل جداً.', 'حجزت زيارة منزلية، احترافية عالية.', 'انتظرت قليلاً.', 'أفضل تنظيف بشرة في الدوحة.', 'ودودون وملتزمون بالموعد.'];
+  const CLINIC_TEXTS = ['استمع الطبيب باهتمام.', 'حجز سهل وانتظار قصير.', 'جلسات العلاج الطبيعي ساعدتني كثيراً.', 'المواقف صعبة.', 'شرح واضح للعلاج.', 'طاقم محترف.'];
   const reviews = [...Array(6)].map((_, i) => ({
     id: `${f.id}-review-${i + 1}`,
     gymId: f.id,
-    authorName: `${FIRST[(i * 7 + 2) % FIRST.length]} ${LAST[(i + 4) % LAST.length]![0]}.`,
+    authorName: `${FIRST[(i * 7 + 2) % FIRST.length]} ${LAST[(i + 4) % LAST.length]}`,
     rating: [5, 4, 5, 3, 5, 4][i]!,
     date: ymd(addDays(today, -r.int(1, 60))),
-    text: f.sectionId === 'salon' ? ['Lovely team and very clean.', 'Great henna design.', 'Booked a home visit, very professional.', 'Waited a little.', 'Best facial in Doha.', 'Friendly and on time.'][i]! : ['The doctor listened carefully.', 'Easy booking, short wait.', 'Physio sessions helped a lot.', 'Parking is difficult.', 'Clear explanation of the treatment.', 'Professional staff.'][i]!,
+    text: (f.sectionId === 'salon' ? SALON_TEXTS : CLINIC_TEXTS)[i]!,
     satisfied: i !== 3,
   }));
   return { appointments: list, reviews };

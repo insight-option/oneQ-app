@@ -36,15 +36,17 @@ const ALL: AmenityKey[] = ['weights', 'cardio', 'pool', 'sauna', 'lockers', 'par
 
 export const GYMS: Gym[] = [
   {
-    id: 'power-house', name: 'Power House', area: 'West Bay', rating: 4.9, reviewCount: 128, monthlyPrice: 299, trainerFromMonthly: 499,
+    // Invented name (English: Doha Strength Club); the id is kept so plans, trainers and reviews stay linked.
+    id: 'power-house', name: 'نادي قوة الدوحة', area: 'West Bay', rating: 4.9, reviewCount: 128, monthlyPrice: 299, trainerFromMonthly: 499,
     isFeatured: true, isNearby: true, amenities: ALL, address: 'Tornado Tower, West Bay, Doha',
-    description: 'A refined strength club in West Bay with open floors, serious equipment, and a calm, focused atmosphere. Built for people who want a premium gym without the noise.',
+    description: 'نادٍ للقوة في الخليج الغربي بمساحات مفتوحة وأجهزة احترافية وأجواء هادئة ومركّزة، لمن يريد نادياً راقياً بعيداً عن الضجيج.',
     images: gymImages(IMG.gymA, IMG.gymB, IMG.james, IMG.khalid), openingHours: HOURS,
   },
   {
-    id: 'oxygen-gym', name: 'Oxygen Gym', area: 'Lusail', rating: 4.8, reviewCount: 96, monthlyPrice: 349, trainerFromMonthly: 549,
+    // Invented name (English: Lusail Elite Club); the id is kept so plans, trainers and reviews stay linked.
+    id: 'oxygen-gym', name: 'نادي النخبة لوسيل', area: 'Lusail', rating: 4.8, reviewCount: 96, monthlyPrice: 349, trainerFromMonthly: 549,
     isFeatured: true, isNearby: false, amenities: ALL, address: 'Lusail Boulevard, Lusail, Doha',
-    description: 'A bright, contemporary club in Lusail with wide cardio terraces, recovery rooms, and a membership culture that feels considered rather than crowded.',
+    description: 'نادٍ عصري ومشرق في لوسيل بمساحات كارديو واسعة وغرف استشفاء، وتجربة اشتراك مريحة غير مزدحمة.',
     images: gymImages(IMG.gymB, IMG.gymA, IMG.omar), openingHours: HOURS,
   },
   {
