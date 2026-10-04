@@ -1,3 +1,3 @@
-import { GiftsPlaceholder } from '@/features/gifts/GiftsPlaceholder';
+import { GiftsScreen } from '@/features/gifts/GiftsScreen';
 
-export default GiftsPlaceholder;
+export default GiftsScreen;

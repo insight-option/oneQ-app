@@ -1107,5 +1107,35 @@
   "giftsSoon": {
     "title": "Gifts are coming soon",
     "body": "Send cash or salon gifts to the people you love."
+  },
+  "gifts": {
+    "title": "Gifts",
+    "subtitle": "Send a cash gift or a salon visit to someone you love.",
+    "history": "Your gifts",
+    "emptyTitle": "No gifts this month",
+    "emptyBody": "Gifts you send or receive will appear here.",
+    "give": "Give a gift",
+    "chooseTitle": "What would you like to give?",
+    "cash": {
+      "title": "Cash gift",
+      "hint": "QAR 20 to QAR 1,000"
+    },
+    "salon": {
+      "title": "Salon gift",
+      "hint": "A service at a salon, on a date you choose",
+      "choose": "Salon",
+      "none": "No salons yet",
+      "service": "Service",
+      "date": "Date (yyyy-mm-dd)",
+      "time": "Time (HH:mm)"
+    },
+    "recipientPhone": "Recipient's mobile number",
+    "message": "Message (optional)",
+    "confirm": "Confirm and pay"
+  },
+  "wallet": {
+    "title": "Wallet",
+    "balance": "Balance",
+    "topUp": "Top up"
   }
 }
